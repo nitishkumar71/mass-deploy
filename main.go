@@ -24,10 +24,10 @@ import (
 func main() {
 
 	var (
-		gateway, username, namespace string
-		action                       string
-		name, image, fprocess        string
-		functions, startAt, workers  int
+		gateway, username, namespace, passwordFile, password string
+		action                                               string
+		name, image, fprocess                                string
+		functions, startAt, workers                          int
 	)
 
 	flag.StringVar(&gateway, "gateway", "http://127.0.0.1:8080", "gateway url")
@@ -39,6 +39,7 @@ func main() {
 	flag.StringVar(&fprocess, "fprocess", "env", "fprocess to use for function")
 	flag.StringVar(&action, "action", "create", "action to perform")
 	flag.IntVar(&workers, "workers", 1, "number of workers to use")
+	flag.StringVar(&passwordFile, "password-file", "", "passowrd file for authentication")
 
 	flag.Parse()
 
@@ -47,7 +48,11 @@ func main() {
 		panic(err)
 	}
 
-	password := lookupPasswordViaKubectl()
+	if passwordFile != "" {
+		password = readPasswordFile(passwordFile)
+	} else {
+		password = lookupPasswordViaKubectl()
+	}
 
 	username = "admin"
 	auth := &sdk.BasicAuth{
@@ -165,4 +170,12 @@ func lookupPasswordViaKubectl() string {
 	password := strings.TrimSpace(string(decoded))
 
 	return password
+}
+
+func readPasswordFile(filePath string) string {
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		panic(err)
+	}
+	return string(content)
 }
